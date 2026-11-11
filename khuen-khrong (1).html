@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ขึ้นโครง | สร้างภาพอ้างอิงอนาโตมี่จากภาพถ่าย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sriracha&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2B2350; --ink-soft:#5B5380; --paper:#FFF8EE; --card:#FFFFFF;
+  --pink:#FF9CC4; --sky:#6EC6FF; --butter:#FFD86B; --mint:#7EDDB4; --lav:#C3A6FF; --coral:#FF6B6B; --peach:#FFB86B;
+  --shadow:5px 5px 0 var(--ink);
+  --wob:22px 28px 20px 26px / 26px 20px 28px 22px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:12px}
+body{
+  margin:0; color:var(--ink); font-family:'Mali','Tahoma','Leelawadee UI',sans-serif; font-size:15px; line-height:1.55;
+  background-color:var(--paper);
+  background-image:radial-gradient(rgba(43,35,80,.16) 1.3px, transparent 1.6px);
+  background-size:24px 24px;
+}
+h1,h2,h3{font-family:'Sriracha','Mali',sans-serif; font-weight:400; margin:0; letter-spacing:.2px}
+button,select,input{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--sky); outline-offset:3px}
+
+/* ---------- header ---------- */
+.top{max-width:1560px; margin:0 auto; padding:22px 24px 6px; display:flex; align-items:center; gap:20px; flex-wrap:wrap}
+.mascot{width:96px; height:116px; flex:none; filter:drop-shadow(4px 4px 0 rgba(43,35,80,.9))}
+.mascot .wave{transform-origin:80px 52px; animation:wave 1.1s ease-in-out 3 .4s}
+@keyframes wave{0%,100%{transform:rotate(0)}30%{transform:rotate(-16deg)}70%{transform:rotate(10deg)}}
+.brand h1{font-size:clamp(38px,5vw,58px); line-height:1; display:flex; gap:2px}
+.brand h1 span:nth-child(1){color:var(--coral)}
+.brand h1 span:nth-child(2){color:var(--peach)}
+.brand h1 span:nth-child(3){color:#E8B500}
+.brand h1 span:nth-child(4){color:#3BBF8A}
+.brand h1 span:nth-child(5){color:#2FA4F0}
+.brand h1 span:nth-child(6){color:#8F6BFF}
+.brand h1 span:nth-child(7){color:#F0589A}
+.brand p{margin:6px 0 0; color:var(--ink-soft); max-width:60ch}
+.chips{margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.chip{display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:2.5px solid var(--ink); border-radius:999px; background:#fff; font-weight:600; font-size:14px; box-shadow:3px 3px 0 var(--ink)}
+.chip i{width:11px; height:11px; border-radius:50%; background:var(--butter); border:2px solid var(--ink)}
+.chip.ok i{background:var(--mint)} .chip.err i{background:var(--coral)}
+.chip button{border:0; background:none; text-decoration:underline; cursor:pointer; padding:0}
+
+/* ---------- layout ---------- */
+.layout{max-width:1560px; margin:0 auto; padding:18px 24px 56px; display:grid; gap:24px; align-items:start;
+  grid-template-columns:330px minmax(0,1fr) 380px; grid-template-areas:"left mid right"}
+.left{grid-area:left; display:grid; gap:24px}
+.mid{grid-area:mid; min-width:0}
+.right{grid-area:right; min-width:0; position:sticky; top:14px}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,1fr) 340px; grid-template-areas:"mid right" "left right"}
+  .right{position:static}
+}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr); grid-template-areas:"mid" "left" "right"; padding:14px 14px 40px}
+  .top{padding:16px 14px 0}
+}
+
+.card{position:relative; background:var(--card); border:3px solid var(--ink); border-radius:var(--wob); box-shadow:var(--shadow); padding:22px 20px 20px}
+.card::before{content:""; position:absolute; top:-13px; left:26px; width:78px; height:24px; background:var(--tape,var(--butter)); border:2.5px solid var(--ink); border-radius:5px; transform:rotate(-3deg); opacity:.95}
+.card.c-pink{--tape:var(--pink)} .card.c-sky{--tape:var(--sky)} .card.c-mint{--tape:var(--mint)} .card.c-lav{--tape:var(--lav)} .card.c-peach{--tape:var(--peach)}
+.card h2{font-size:23px; display:flex; align-items:center; gap:10px; margin-bottom:12px}
+.step{display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--coral); color:#fff; border:2.5px solid var(--ink); font-family:'Mali'; font-weight:700; font-size:15px}
+.c-sky .step{background:var(--sky)} .c-mint .step{background:#3BBF8A} .c-lav .step{background:#8F6BFF}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 16px; background:#fff; border:3px solid var(--ink); border-radius:16px 18px 15px 19px; font-weight:700; cursor:pointer; box-shadow:3px 3px 0 var(--ink); transition:transform .12s, box-shadow .12s, background .12s}
+.btn:hover{transform:translate(-1px,-2px); box-shadow:5px 5px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+.btn[disabled]{opacity:.45; cursor:not-allowed; transform:none; box-shadow:3px 3px 0 var(--ink)}
+.btn.pink{background:var(--pink)} .btn.sky{background:var(--sky)} .btn.mint{background:var(--mint)} .btn.butter{background:var(--butter)} .btn.lav{background:var(--lav)} .btn.peach{background:var(--peach)}
+.btn.big{padding:12px 22px; font-size:17px}
+.row{display:flex; gap:10px; flex-wrap:wrap; margin:8px 0}
+.row .btn{flex:1 1 auto}
+
+.field{margin:12px 0}
+.field label,.lbl{display:flex; justify-content:space-between; gap:8px; font-weight:600; margin-bottom:4px}
+.field output{font-weight:700; color:var(--coral)}
+.hint{font-size:13px; color:var(--ink-soft); margin:4px 0 0}
+input[type=range]{width:100%; accent-color:var(--coral); height:26px}
+select{width:100%; padding:8px 10px; border:2.5px solid var(--ink); border-radius:12px; background:#fff; font-weight:600}
+.check{display:flex; align-items:center; gap:9px; margin:7px 0; cursor:pointer; font-weight:500}
+.check input{width:20px; height:20px; accent-color:var(--coral); flex:none}
+.sep{border:0; border-top:2.5px dashed rgba(43,35,80,.28); margin:16px 0}
+fieldset{border:0; padding:0; margin:0}
+legend{font-weight:700; padding:0; margin-bottom:2px}
+
+/* ---------- stage ---------- */
+.stagecard{padding:18px}
+.stagewrap{position:relative; border:3px solid var(--ink); border-radius:18px; overflow:hidden; min-height:420px; display:grid; place-items:center; padding:10px;
+  background-color:#fff;
+  background-image:linear-gradient(rgba(110,198,255,.28) 1px,transparent 1px),linear-gradient(90deg,rgba(110,198,255,.28) 1px,transparent 1px);
+  background-size:28px 28px}
+.stagewrap.checker{background-color:#fff; background-image:linear-gradient(45deg,#d9d6e6 25%,transparent 25%,transparent 75%,#d9d6e6 75%),linear-gradient(45deg,#d9d6e6 25%,transparent 25%,transparent 75%,#d9d6e6 75%); background-size:24px 24px; background-position:0 0,12px 12px}
+.stagewrap.white{background:#fff}
+.stagewrap.dark{background:#2B2350}
+#view{display:block; max-width:100%; max-height:72vh; width:auto; height:auto; cursor:crosshair}
+.empty{position:absolute; inset:14px; display:grid; place-items:center; text-align:center; border:3px dashed var(--ink-soft); border-radius:18px; background:rgba(255,248,238,.92); padding:20px}
+.empty h3{font-size:28px; margin-bottom:6px}
+.empty p{margin:4px 0; color:var(--ink-soft)}
+.empty .row{justify-content:center}
+.stagewrap.drag .empty,.stagewrap.drag{outline:4px dashed var(--coral); outline-offset:-10px}
+.badge{position:absolute; top:12px; left:12px; right:12px; display:flex; gap:8px; flex-wrap:wrap; pointer-events:none}
+.badge span{pointer-events:auto; padding:5px 12px; border:2.5px solid var(--ink); border-radius:999px; font-weight:700; font-size:13.5px; background:#fff; box-shadow:2px 2px 0 var(--ink)}
+.badge .good{background:var(--mint)} .badge .warn{background:var(--butter)} .badge .bad{background:var(--coral); color:#fff}
+.busy,.count{position:absolute; inset:0; display:none; place-items:center; background:rgba(255,248,238,.78); font-family:'Sriracha','Mali'; font-size:26px; text-align:center}
+.busy.on,.count.on{display:grid}
+.count{font-size:min(30vw,190px); color:var(--coral); -webkit-text-stroke:5px var(--ink); paint-order:stroke fill; background:rgba(255,248,238,.5)}
+.tip{position:fixed; z-index:50; padding:6px 11px; background:var(--ink); color:#fff; border-radius:10px; font-size:13px; pointer-events:none; display:none; white-space:nowrap}
+.exportbar{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px 22px; margin-top:16px; align-items:end}
+.exportbar .btns{display:flex; gap:10px; flex-wrap:wrap}
+.exportbar .btns .btn{flex:1 1 auto}
+.note{margin-top:10px; padding:9px 13px; background:#FFF3C9; border:2.5px dashed var(--ink); border-radius:14px; font-size:13.5px}
+
+/* ---------- info ---------- */
+.tabs{display:flex; gap:6px; margin:-4px 0 12px; flex-wrap:wrap}
+.tab{flex:1 1 auto; padding:7px 10px; border:2.5px solid var(--ink); border-radius:12px; background:#fff; font-weight:700; cursor:pointer; font-size:14px}
+.tab[aria-selected=true]{background:var(--lav); box-shadow:2px 2px 0 var(--ink)}
+.panel{display:none; max-height:68vh; overflow:auto; padding-right:4px} .panel.on{display:block}
+.meter{height:16px; border:2.5px solid var(--ink); border-radius:999px; overflow:hidden; background:#fff}
+.meter b{display:block; height:100%; background:var(--mint)}
+.alert{padding:11px 13px; border:2.5px solid var(--ink); border-radius:14px; margin:10px 0; background:#FFF3C9}
+.alert.bad{background:#FFD6D6} .alert.good{background:#D9F7E8}
+.alert strong{display:block; margin-bottom:4px}
+.tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+.tag{padding:2px 10px; border:2px solid var(--ink); border-radius:999px; background:#fff; font-size:13px; font-weight:600}
+table{width:100%; border-collapse:collapse; font-size:13px}
+th,td{padding:6px 5px; border-bottom:2px dotted rgba(43,35,80,.3); text-align:left; vertical-align:top}
+th{font-family:'Mali'; font-weight:700; position:sticky; top:0; background:#fff}
+td.n,th.n{text-align:right; white-space:nowrap}
+.dot{display:inline-block; width:12px; height:12px; border:2px solid var(--ink); border-radius:50%; margin-right:6px; vertical-align:-1px}
+.formula{color:var(--ink-soft); font-size:12px}
+.conf{display:grid; grid-template-columns:1fr 54px; gap:4px 8px; align-items:center; font-size:12.5px}
+.conf .bar{height:9px; border:2px solid var(--ink); border-radius:9px; background:#fff; overflow:hidden}
+.conf .bar b{display:block; height:100%}
+.big-num{font-family:'Sriracha'; font-size:40px; line-height:1; color:var(--coral)}
+.toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,30px); opacity:0; pointer-events:none; background:var(--ink); color:#fff; padding:10px 20px; border-radius:999px; border:3px solid #fff; font-weight:700; transition:.25s; z-index:60; max-width:90vw; text-align:center}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+#cam{position:fixed; left:-9999px; width:2px; height:2px; opacity:0}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <svg class="mascot" viewBox="0 0 120 150" aria-hidden="true">
+    <g stroke="#2B2350" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+      <line x1="50" y1="92" x2="47" y2="130" stroke-width="17"/><line x1="50" y1="92" x2="47" y2="130" stroke="#FFD86B" stroke-width="10"/>
+      <line x1="70" y1="92" x2="73" y2="130" stroke-width="17"/><line x1="70" y1="92" x2="73" y2="130" stroke="#FFD86B" stroke-width="10"/>
+      <rect x="36" y="128" width="22" height="12" rx="5" fill="#FF9A6B"/><rect x="62" y="128" width="22" height="12" rx="5" fill="#FF9A6B"/>
+      <rect x="42" y="76" width="36" height="22" rx="8" fill="#FF9CC4"/>
+      <line x1="40" y1="52" x2="28" y2="82" stroke-width="15"/><line x1="40" y1="52" x2="28" y2="82" stroke="#7EDDB4" stroke-width="8"/>
+      <circle cx="27" cy="88" r="7" fill="#FFB86B"/>
+      <rect x="38" y="42" width="44" height="38" rx="11" fill="#6EC6FF"/>
+      <rect x="54" y="32" width="12" height="12" fill="#E1D3FF"/>
+      <circle cx="60" cy="22" r="17" fill="#C3A6FF"/>
+      <g class="wave">
+        <line x1="80" y1="52" x2="98" y2="40" stroke-width="15"/><line x1="80" y1="52" x2="98" y2="40" stroke="#7EDDB4" stroke-width="8"/>
+        <line x1="98" y1="40" x2="104" y2="16" stroke-width="14"/><line x1="98" y1="40" x2="104" y2="16" stroke="#52C79A" stroke-width="7"/>
+        <circle cx="98" cy="40" r="6.5" fill="#FF6B6B"/><circle cx="105" cy="10" r="8" fill="#FFB86B"/>
+      </g>
+      <circle cx="40" cy="52" r="7" fill="#FF6B6B"/><circle cx="80" cy="52" r="7" fill="#FF6B6B"/>
+    </g>
+    <circle cx="54" cy="21" r="2.2" fill="#2B2350"/><circle cx="66" cy="21" r="2.2" fill="#2B2350"/>
+    <path d="M55 28 Q60 32 65 28" stroke="#2B2350" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="brand">
+    <h1 aria-label="ขึ้นโครง"><span>ข</span><span>ึ้</span><span>น</span><span>โ</span><span>ค</span><span>ร</span><span>ง</span></h1>
+    <p>เปลี่ยนภาพถ่ายหรือภาพจากเว็บแคมให้เป็นโครงอนาโตมี่แบบ simplified ทรงกลม กล่อง และกระบอก เพื่อใช้เป็นภาพอ้างอิงตอนวาดต่อ</p>
+  </div>
+  <div class="chips">
+    <span class="chip" id="modelChip"><i></i><span id="modelTxt">โมเดล: รอเริ่มต้น</span><button id="retry" hidden>ลองใหม่</button></span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ================= LEFT ================= -->
+  <div class="left">
+    <section class="card c-pink" aria-labelledby="h-in">
+      <h2 id="h-in"><span class="step">1</span>นำเข้าภาพ</h2>
+      <div class="row">
+        <label class="btn pink" for="fileIn" style="cursor:pointer">อัปโหลดรูป</label>
+        <input type="file" id="fileIn" accept="image/*" class="sr">
+        <button class="btn sky" id="btnCam">เปิดกล้อง</button>
+      </div>
+      <div class="row">
+        <button class="btn mint" id="btnShot" disabled>ถ่ายภาพ</button>
+        <button class="btn butter" id="btnDemo">ท่าตัวอย่าง</button>
+      </div>
+      <div class="field">
+        <label for="timer">ตั้งเวลาถ่าย</label>
+        <select id="timer"><option value="0">ถ่ายทันที</option><option value="3" selected>หน่วง 3 วินาที</option><option value="5">หน่วง 5 วินาที</option><option value="10">หน่วง 10 วินาที</option></select>
+      </div>
+      <label class="check"><input type="checkbox" id="mirror" checked>กลับด้านเหมือนกระจก (เฉพาะเว็บแคม)</label>
+      <p class="hint">วางรูปจากคลิปบอร์ด (Ctrl+V) หรือลากไฟล์มาวางบนกรอบกลางได้เลย ภาพจะถูกประมวลผลในเครื่องของคุณทั้งหมด</p>
+      <p class="hint">เคล็ดลับ: ให้เห็นทั้งตัว ใส่เสื้อผ้าที่ไม่ฟูมาก และแสงสว่างพอ</p>
+    </section>
+
+    <section class="card c-sky" aria-labelledby="h-set">
+      <h2 id="h-set"><span class="step">2</span>ปรับแต่งโครง</h2>
+
+      <div class="field">
+        <label for="model">ความแม่นของโมเดล</label>
+        <select id="model">
+          <option value="lite">Lite เร็วที่สุด</option>
+          <option value="full" selected>Full สมดุล</option>
+          <option value="heavy">Heavy แม่นที่สุด</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="thr">ความเชื่อมั่นขั้นต่ำ <output id="thrO">50%</output></label>
+        <input type="range" id="thr" min="5" max="95" value="50">
+        <p class="hint">จุดที่ต่ำกว่าค่านี้จะถูกเตือนว่าไม่น่าเชื่อถือ</p>
+      </div>
+
+      <div class="field">
+        <label for="low">รูปทรงที่ไม่น่าเชื่อถือ</label>
+        <select id="low">
+          <option value="fade">แสดงแบบจางและเตือน</option>
+          <option value="hide">ซ่อนรูปทรงนั้น</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="thick">ความหนาแขนขา <output id="thickO">100%</output></label>
+        <input type="range" id="thick" min="55" max="170" value="100">
+      </div>
+
+      <div class="field">
+        <label for="palette">โทนสี</label>
+        <select id="palette">
+          <option value="part">สีตามส่วนของร่างกาย</option>
+          <option value="lr">แยกซ้าย (ฟ้า) ขวา (ชมพู)</option>
+          <option value="mono">เทาแมนเนควิน</option>
+        </select>
+      </div>
+
+      <label class="check"><input type="checkbox" id="outline" checked>เส้นขอบรูปทรง</label>
+      <div class="field">
+        <label for="lw">ความหนาเส้นขอบ <output id="lwO">3</output></label>
+        <input type="range" id="lw" min="1" max="8" value="3" step="0.5">
+      </div>
+
+      <hr class="sep">
+      <fieldset>
+        <legend>เส้นไกด์ช่วยวาด</legend>
+        <label class="check"><input type="checkbox" id="gHead" checked>ทิศหน้าและแนวตา</label>
+        <label class="check"><input type="checkbox" id="gAction" checked>เส้นแอ็กชัน (line of action)</label>
+        <label class="check"><input type="checkbox" id="gLines" checked>แนวไหล่และแนวสะโพก</label>
+        <label class="check"><input type="checkbox" id="gAngles">มุมข้อศอกและข้อเข่า</label>
+        <label class="check"><input type="checkbox" id="gDots">จุด landmark ทั้ง 33 จุด</label>
+      </fieldset>
+
+      <hr class="sep">
+      <div class="field">
+        <label for="bgop">ความจางของภาพต้นฉบับ <output id="bgopO">30%</output></label>
+        <input type="range" id="bgop" min="0" max="100" value="30">
+      </div>
+      <div class="field">
+        <label for="bgmode">พื้นหลังตอนแสดงผล</label>
+        <select id="bgmode">
+          <option value="grid">กระดาษตาราง</option>
+          <option value="checker">โปร่งใส (ลายหมากรุก)</option>
+          <option value="white">ขาว</option>
+          <option value="dark">ม่วงเข้ม</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="smooth">ความนิ่งของกล้องสด <output id="smoothO">40%</output></label>
+        <input type="range" id="smooth" min="0" max="90" value="40">
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= MID ================= -->
+  <section class="mid">
+    <div class="card c-lav stagecard">
+      <h2 style="margin-bottom:12px"><span class="step" style="background:#8F6BFF">3</span>ภาพอ้างอิงอนาโตมี่</h2>
+      <div class="stagewrap" id="stage">
+        <canvas id="view" width="900" height="1200" aria-label="ผลลัพธ์โครงอนาโตมี่"></canvas>
+        <div class="empty" id="empty">
+          <div>
+            <h3>ยังไม่มีภาพ</h3>
+            <p>ลากรูปมาวางที่นี่ หรือกด Ctrl+V เพื่อวางรูปจากคลิปบอร์ด</p>
+            <div class="row">
+              <label class="btn pink big" for="fileIn" style="cursor:pointer;flex:0 0 auto">เลือกรูป</label>
+              <button class="btn sky big" id="btnCam2" style="flex:0 0 auto">เปิดกล้อง</button>
+              <button class="btn butter big" id="btnDemo2" style="flex:0 0 auto">ดูท่าตัวอย่าง</button>
+            </div>
+          </div>
+        </div>
+        <div class="badge" id="badge"></div>
+        <div class="busy" id="busy">กำลังวิเคราะห์ท่าทาง…</div>
+        <div class="count" id="count"></div>
+      </div>
+
+      <div class="exportbar">
+        <div class="field" style="margin:0">
+          <label for="expScale">ขนาดไฟล์ PNG</label>
+          <select id="expScale"><option value="1">1× (ขนาดเท่าภาพต้นฉบับ)</option><option value="2" selected>2×</option><option value="3">3×</option></select>
+        </div>
+        <div>
+          <label class="check" style="margin:0 0 6px"><input type="checkbox" id="expCrop" checked>ตัดขอบว่างให้พอดีโครง</label>
+          <label class="check" style="margin:0"><input type="checkbox" id="expGuides">ใส่เส้นไกด์ลงในไฟล์</label>
+        </div>
+        <div class="btns">
+          <button class="btn mint big" id="btnPng" disabled>บันทึก PNG โปร่งใส</button>
+          <button class="btn sky" id="btnCopy" disabled>คัดลอกภาพ</button>
+          <button class="btn butter" id="btnJson" disabled>ส่งออกพิกัด JSON</button>
+        </div>
+      </div>
+      <div class="note" id="expNote">ไฟล์ PNG จะมีเฉพาะรูปทรงสีทึบ พื้นที่นอกเส้นขอบทั้งหมดโปร่งใส ไม่มีภาพถ่ายต้นฉบับติดไปด้วย</div>
+    </div>
+  </section>
+
+  <!-- ================= RIGHT ================= -->
+  <aside class="right">
+    <section class="card c-mint" aria-labelledby="h-info">
+      <h2 id="h-info">ข้อมูลการวิเคราะห์</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-p="pTrust">ความน่าเชื่อถือ</button>
+        <button class="tab" role="tab" aria-selected="false" data-p="pShape">รูปทรง</button>
+        <button class="tab" role="tab" aria-selected="false" data-p="pProp">สัดส่วนและมุม</button>
+      </div>
+      <div class="panel on" id="pTrust"></div>
+      <div class="panel" id="pShape"></div>
+      <div class="panel" id="pProp"></div>
+    </section>
+  </aside>
+</main>
+
+<video id="cam" playsinline muted></video>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+/* =====================================================================
+   ขึ้นโครง : MediaPipe Pose (33 landmarks) -> simplified anatomy shapes
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const INK = '#2B2350';
+const VISION_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const modelURL = k => `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`;
+
+const NAMES = ['จมูก','ตาซ้ายด้านใน','ตาซ้าย','ตาซ้ายด้านนอก','ตาขวาด้านใน','ตาขวา','ตาขวาด้านนอก','หูซ้าย','หูขวา','มุมปากซ้าย','มุมปากขวา','ไหล่ซ้าย','ไหล่ขวา','ศอกซ้าย','ศอกขวา','ข้อมือซ้าย','ข้อมือขวา','นิ้วก้อยซ้าย','นิ้วก้อยขวา','นิ้วชี้ซ้าย','นิ้วชี้ขวา','นิ้วโป้งซ้าย','นิ้วโป้งขวา','สะโพกซ้าย','สะโพกขวา','เข่าซ้าย','เข่าขวา','ข้อเท้าซ้าย','ข้อเท้าขวา','ส้นเท้าซ้าย','ส้นเท้าขวา','ปลายเท้าซ้าย','ปลายเท้าขวา'];
+/* landmarks ที่ถูกนำไปสร้างรูปทรงจริง (ใช้แจ้งเตือน) */
+const USED = [0,2,5,7,8,11,12,13,14,15,16,17,18,19,20,23,24,25,26,27,28,29,30,31,32];
+
+const PART_COLOR = {head:'#C3A6FF',neck:'#E1D3FF',ribcage:'#6EC6FF',abdomen:'#A8E0FF',pelvis:'#FF9CC4',upperarm:'#7EDDB4',forearm:'#52C79A',hand:'#FFB86B',thigh:'#FFD86B',shin:'#FFC23F',foot:'#FF9A6B',joint:'#FF6B6B'};
+const PART_LABEL = {head:'หัว',neck:'คอ',ribcage:'อก',abdomen:'เอว',pelvis:'สะโพก',upperarm:'ต้นแขน',forearm:'แขนท่อนล่าง',hand:'มือ',thigh:'ต้นขา',shin:'น่อง',foot:'เท้า',joint:'ข้อต่อ'};
+
+/* ---------------- state ---------------- */
+const raw = document.createElement('canvas'); raw.width = 900; raw.height = 1200;
+const rawCtx = raw.getContext('2d', {willReadFrequently:true});
+const view = $('#view'), ctx = view.getContext('2d');
+const video = $('#cam');
+const S = {
+  hasSource:false, kind:'none', mirrored:false,
+  lm:null, prevLm:null, model:null,
+  live:false, stream:null,
+  lmk:null, vision:null, mode:'IMAGE', loading:false, modelKey:'full',
+  lastT:-1, frame:0, noPerson:false
+};
+
+/* ---------------- tiny math ---------------- */
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y,z:(a.z||0)-(b.z||0)});
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y,z:(a.z||0)+(b.z||0)});
+const mul=(a,k)=>({x:a.x*k,y:a.y*k,z:(a.z||0)*k});
+const len=a=>Math.hypot(a.x,a.y);
+const len3=a=>Math.hypot(a.x,a.y,a.z||0);
+const dist=(a,b)=>len(sub(a,b));
+const norm=a=>{const l=len(a);return l<1e-6?{x:0,y:-1,z:0}:{x:a.x/l,y:a.y/l,z:0}};
+const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:(a.z||0)+((b.z||0)-(a.z||0))*t});
+const mid=(a,b)=>lerp(a,b,.5);
+const perp=a=>({x:-a.y,y:a.x,z:0});
+const polyArea=p=>{let s=0;for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];s+=a.x*b.y-b.x*a.y}return Math.abs(s)/2};
+const angleAt=(a,b,c)=>{const u=norm(sub(a,b)),v=norm(sub(c,b));return Math.acos(Math.max(-1,Math.min(1,u.x*v.x+u.y*v.y)))*180/Math.PI};
+const fmt=(n,d=0)=>Number(n).toLocaleString('th-TH',{maximumFractionDigits:d,minimumFractionDigits:d});
+
+/* ---------------- options from UI ---------------- */
+function opts(){
+  return {
+    thr:+$('#thr').value/100, low:$('#low').value, thick:+$('#thick').value/100,
+    palette:$('#palette').value, outline:$('#outline').checked, lw:+$('#lw').value,
+    bgop:+$('#bgop').value/100,
+    gHead:$('#gHead').checked, gAction:$('#gAction').checked, gLines:$('#gLines').checked,
+    gAngles:$('#gAngles').checked, gDots:$('#gDots').checked
+  };
+}
+
+/* =====================================================================
+   GEOMETRY : landmarks -> shapes
+   ===================================================================== */
+function buildModel(lm, W, H, o){
+  const P = lm.map(p=>({x:p.x*W, y:p.y*H, z:p.z*W, v:p.v}));
+  const inF = i => lm[i].x>-.03 && lm[i].x<1.03 && lm[i].y>-.03 && lm[i].y<1.03;
+  const okp = i => P[i].v>=o.thr && inF(i);
+  const shapes = [];
+  const zAvg = n => n.reduce((a,i)=>a+P[i].z,0)/n.length;
+  const push = s => { s.ok = s.chk ? s.chk() : s.needs.every(okp); s.zk = zAvg(s.needs)+(s.zb||0)*W; shapes.push(s); return s; };
+
+  const circle = (id,label,part,side,c,r,needs,extra={}) =>
+    push({kind:'circle',id,label,part,side,c,r,needs,area:Math.PI*r*r,formula:'π × r²',dims:`r = ${fmt(r)} px`,...extra});
+  const polyShape = (id,label,part,side,pts,needs,formula,dims,area,extra={}) =>
+    push({kind:'poly',id,label,part,side,pts,needs,area,formula,dims,...extra});
+  const trap = (id,label,part,side,a,b,ra,rb,needs,extra={}) => {
+    const d=norm(sub(b,a)), n=perp(d), L=dist(a,b);
+    const pts=[add(a,mul(n,ra)),add(b,mul(n,rb)),add(b,mul(n,-rb)),add(a,mul(n,-ra))];
+    return polyShape(id,label,part,side,pts,needs,'(r₁ + r₂) × L',`r₁ ${fmt(ra)}, r₂ ${fmt(rb)}, L ${fmt(L)} px`,(ra+rb)*L,{round:Math.min(ra,rb)*.35,...extra});
+  };
+  const rectFrom = (id,label,part,side,origin,dir,length,width,needs,extra={}) => {
+    const n=perp(dir), hw=width/2, e=add(origin,mul(dir,length));
+    const pts=[add(origin,mul(n,hw)),add(e,mul(n,hw)),add(e,mul(n,-hw)),add(origin,mul(n,-hw))];
+    return polyShape(id,label,part,side,pts,needs,'กว้าง × ยาว',`${fmt(width)} × ${fmt(length)} px`,width*length,{round:width*.28,...extra});
+  };
+
+  /* ----- torso reference frame ----- */
+  const sL=P[11], sR=P[12], hL=P[23], hR=P[24];
+  const Ms=mid(sL,sR), Mh=mid(hL,hR);
+  const tLen=dist(Ms,Mh), shW=dist(sL,sR), hpW=dist(hL,hR);
+  const ref=Math.max(tLen, shW*1.1, 1);
+  const up=norm(sub(Ms,Mh)), down=mul(up,-1);
+  const T=o.thick;
+
+  /* ----- ribcage / abdomen / pelvis (quad = rounded rectangle) ----- */
+  const Mrib=lerp(Ms,Mh,.58), Mpl=lerp(Mh,Ms,.30);
+  const lift=mul(up,.03*tLen);
+  const rbTop=[add(lerp(sL,Ms,.10),lift), add(lerp(sR,Ms,.10),lift)];
+  const rbBot=[lerp(lerp(sL,hL,.58),Mrib,.14), lerp(lerp(sR,hR,.58),Mrib,.14)];
+  const plTop=[lerp(lerp(hL,sL,.30),Mpl,-.10), lerp(lerp(hR,sR,.30),Mpl,-.10)];
+  const plBotC=add(Mh,mul(down,.09*tLen));
+  const plBot=[lerp(add(hL,mul(down,.09*tLen)),plBotC,.14), lerp(add(hR,mul(down,.09*tLen)),plBotC,.14)];
+  const abC=mid(lerp(Mrib,Mpl,.5),lerp(Mrib,Mpl,.5));
+  const abPts=[lerp(rbBot[0],Mrib,.14),lerp(rbBot[1],Mrib,.14),lerp(plTop[1],Mpl,.14),lerp(plTop[0],Mpl,.14)];
+  const torsoNeeds=[11,12,23,24];
+
+  polyShape('abdomen','เอว (สี่เหลี่ยม)','abdomen','C',abPts,torsoNeeds,'½|Σ(xᵢyᵢ₊₁ − xᵢ₊₁yᵢ)|','shoelace',polyArea(abPts),{round:ref*.03,zb:.05});
+  polyShape('ribcage','อก (สี่เหลี่ยม)','ribcage','C',[rbTop[0],rbTop[1],rbBot[1],rbBot[0]],torsoNeeds,'½|Σ(xᵢyᵢ₊₁ − xᵢ₊₁yᵢ)|','shoelace',polyArea([rbTop[0],rbTop[1],rbBot[1],rbBot[0]]),{round:ref*.07});
+  polyShape('pelvis','สะโพก (สี่เหลี่ยม)','pelvis','C',[plTop[0],plTop[1],plBot[1],plBot[0]],torsoNeeds,'½|Σ(xᵢyᵢ₊₁ − xᵢ₊₁yᵢ)|','shoelace',polyArea([plTop[0],plTop[1],plBot[1],plBot[0]]),{round:ref*.06});
+  const torsoQuadArea = polyArea([sL,sR,hR,hL]);
+
+  /* ----- head : sphere (circle) from ears / eyes / nose ----- */
+  const minR=.17*ref, e7=okp(7), e8=okp(8);
+  let hc, hr;
+  if(e7&&e8){ const em=mid(P[7],P[8]); hr=Math.max(dist(P[7],P[8])*.62, minR*.9); hc=add(em,mul(up,.10*hr)); }
+  else if(e7||e8){ const ei=e7?7:8; hr=minR; hc=add(P[ei],mul(up,.10*hr)); }
+  else if(okp(0)){ const em=(okp(2)&&okp(5))?mid(P[2],P[5]):P[0]; hr=minR; hc=add(em,mul(up,.12*hr)); }
+  else { hr=minR; hc=add(Ms,mul(up,1.15*hr)); }
+  const headOk = okp(0) && (e7||e8);
+
+  /* neck cylinder (behind head) */
+  const nd=norm(sub(Ms,hc));
+  trap('neck','คอ (กระบอก)','neck','C',add(hc,mul(nd,.7*hr)),add(Ms,mul(up,.02*tLen)),.34*hr,.40*hr,[0,11,12],{zb:.15,chk:()=>headOk&&okp(11)&&okp(12),round:2});
+  circle('head','หัว (วงกลม)','head','C',hc,hr,[0,7,8],{chk:()=>headOk});
+
+  /* ----- limbs ----- */
+  const SIDES=[
+    {s:'L',n:'ซ้าย',sh:11,el:13,wr:15,pk:17,ix:19,hp:23,kn:25,an:27,hl:29,ft:31},
+    {s:'R',n:'ขวา',sh:12,el:14,wr:16,pk:18,ix:20,hp:24,kn:26,an:28,hl:30,ft:32}
+  ];
+  const bones=[], angles=[];
+  const jointBias=-.03;
+  for(const d of SIDES){
+    const r=k=>k*ref*T;
+    const uaA=r(.100), uaB=r(.075), faA=r(.075), faB=r(.055);
+    const thA=r(.125), thB=r(.085), shA=r(.085), shB=r(.060);
+    const sh=P[d.sh], el=P[d.el], wr=P[d.wr], hp=P[d.hp], kn=P[d.kn], an=P[d.an];
+
+    trap('ua'+d.s,`ต้นแขน${d.n} (กระบอก)`,'upperarm',d.s,sh,el,uaA,uaB,[d.sh,d.el]);
+    trap('fa'+d.s,`แขนท่อนล่าง${d.n} (กระบอก)`,'forearm',d.s,el,wr,faA,faB,[d.el,d.wr]);
+    trap('th'+d.s,`ต้นขา${d.n} (กระบอก)`,'thigh',d.s,hp,kn,thA,thB,[d.hp,d.kn]);
+    trap('sn'+d.s,`น่อง${d.n} (กระบอก)`,'shin',d.s,kn,an,shA,shB,[d.kn,d.an]);
+
+    /* hand : rounded rectangle from wrist toward knuckles */
+    const kn2=mid(P[d.pk],P[d.ix]); const hv=sub(kn2,wr); const hd=norm(hv);
+    const hLen=Math.max(len(hv)*1.25, ref*.10); const hW=Math.max(dist(P[d.pk],P[d.ix])*1.3, hLen*.45);
+    rectFrom('hd'+d.s,`มือ${d.n} (สี่เหลี่ยม)`,'hand',d.s,wr,hd,hLen,hW,[d.wr,d.pk,d.ix],{zb:-.01});
+
+    /* foot : rounded rectangle heel -> toe */
+    const fv=sub(P[d.ft],P[d.hl]); const fd=norm(fv); const fLen=Math.max(len(fv)*1.08, ref*.10); const fW=fLen*.40;
+    rectFrom('ft'+d.s,`เท้า${d.n} (สี่เหลี่ยม)`,'foot',d.s,add(P[d.hl],mul(fd,-.05*fLen)),fd,fLen,fW,[d.an,d.hl,d.ft],{zb:-.01});
+
+    /* joints : circles */
+    const jr={sh:uaA*1.15, el:Math.max(uaB,faA)*1.12, wr:faB*1.1, hp:thA*1.08, kn:Math.max(thB,shA)*1.12, an:shB*1.12};
+    circle('js'+d.s,`ไหล่${d.n}`,'joint',d.s,sh,jr.sh,[d.sh],{zb:jointBias,joint:1});
+    circle('je'+d.s,`ศอก${d.n}`,'joint',d.s,el,jr.el,[d.el],{zb:jointBias,joint:1});
+    circle('jw'+d.s,`ข้อมือ${d.n}`,'joint',d.s,wr,jr.wr,[d.wr],{zb:jointBias,joint:1});
+    circle('jh'+d.s,`สะโพก${d.n} (ข้อต่อ)`,'joint',d.s,hp,jr.hp,[d.hp],{zb:jointBias,joint:1});
+    circle('jk'+d.s,`เข่า${d.n}`,'joint',d.s,kn,jr.kn,[d.kn],{zb:jointBias,joint:1});
+    circle('ja'+d.s,`ข้อเท้า${d.n}`,'joint',d.s,an,jr.an,[d.an],{zb:jointBias,joint:1});
+
+    const seg=(label,a,b)=>{const A=P[a],B=P[b];bones.push({label,l2:dist(A,B),l3:len3(sub(A,B)),ok:okp(a)&&okp(b)})};
+    seg(`ต้นแขน${d.n}`,d.sh,d.el); seg(`แขนท่อนล่าง${d.n}`,d.el,d.wr); seg(`ต้นขา${d.n}`,d.hp,d.kn); seg(`น่อง${d.n}`,d.kn,d.an);
+    angles.push({label:`ศอก${d.n}`,v:angleAt(sh,el,wr),ok:okp(d.sh)&&okp(d.el)&&okp(d.wr),at:el,a:sh,c:wr});
+    angles.push({label:`เข่า${d.n}`,v:angleAt(hp,kn,an),ok:okp(d.hp)&&okp(d.kn)&&okp(d.an),at:kn,a:hp,c:an});
+  }
+  bones.push({label:'ความกว้างไหล่',l2:shW,l3:len3(sub(sL,sR)),ok:okp(11)&&okp(12)});
+  bones.push({label:'ความกว้างสะโพก',l2:hpW,l3:len3(sub(hL,hR)),ok:okp(23)&&okp(24)});
+  bones.push({label:'ความยาวลำตัว',l2:tLen,l3:len3(sub(Ms,Mh)),ok:torsoNeeds.every(okp)});
+
+  shapes.sort((a,b)=>b.zk-a.zk);   // far -> near (z from MediaPipe)
+
+  /* ----- proportions ----- */
+  const headUnit=hr*2.4;                                 // vertex-to-chin estimate
+  const feet=[27,28,29,30,31,32].filter(okp).map(i=>P[i].y);
+  const top=hc.y-hr, bottom=feet.length?Math.max(...feet):null;
+  const heads=bottom?(bottom-top)/headUnit:null;
+  const shTilt=Math.atan2(sR.y-sL.y,sR.x-sL.x)*180/Math.PI;
+  const hpTilt=Math.atan2(hR.y-hL.y,hR.x-hL.x)*180/Math.PI;
+  const lean=Math.atan2(up.x,-up.y)*180/Math.PI;
+
+  const unreliable=USED.filter(i=>!okp(i));
+  const avgConf=USED.reduce((a,i)=>a+Math.max(0,Math.min(1,P[i].v)),0)/USED.length;
+
+  return {P,okp,shapes,hc,hr,up,Ms,Mh,bones,angles,heads,headUnit,top,bottom,shTilt,hpTilt,lean,torsoQuadArea,unreliable,avgConf,ref,W,H,tLen};
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function shapeColor(s,mode){
+  if(mode==='mono') return s.part==='joint'?'#C9C3DD':'#E8E4F1';
+  if(mode==='lr'){
+    if(s.side==='L') return s.part==='joint'?'#3FA9F5':'#8FD3FF';
+    if(s.side==='R') return s.part==='joint'?'#FF5C8A':'#FFA3C4';
+    return {head:'#C3A6FF',neck:'#E1D3FF',ribcage:'#D9CBFF',abdomen:'#EADFFF',pelvis:'#C3A6FF'}[s.part]||'#D9CBFF';
+  }
+  return PART_COLOR[s.part];
+}
+function roundedPath(c,pts,r){
+  const n=pts.length; c.beginPath();
+  for(let i=0;i<n;i++){
+    const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n];
+    const v1=norm(sub(p0,p1)),v2=norm(sub(p2,p1));
+    const d=Math.min(r||0,dist(p0,p1)/2,dist(p2,p1)/2);
+    const a={x:p1.x+v1.x*d,y:p1.y+v1.y*d}, b={x:p1.x+v2.x*d,y:p1.y+v2.y*d};
+    if(i===0)c.moveTo(a.x,a.y);else c.lineTo(a.x,a.y);
+    c.quadraticCurveTo(p1.x,p1.y,b.x,b.y);
+  }
+  c.closePath();
+}
+function drawShape(c,s,o,lw,{faded,dashed}){
+  c.save();
+  c.globalAlpha=faded?.38:1;
+  c.fillStyle=shapeColor(s,o.palette);
+  if(s.kind==='circle'){c.beginPath();c.arc(s.c.x,s.c.y,s.r,0,Math.PI*2);}
+  else roundedPath(c,s.pts,s.round);
+  c.fill();
+  if(o.outline){
+    c.lineWidth=lw; c.strokeStyle=INK; c.lineJoin='round';
+    if(dashed)c.setLineDash([lw*3,lw*2.2]);
+    c.stroke();
+  }
+  c.restore();
+}
+function visibleShapes(m,o){return m.shapes.filter(s=>!(o.low==='hide'&&!s.ok))}
+
+function drawFigure(c,m,o,lw,screen){
+  for(const s of visibleShapes(m,o)){
+    const bad=!s.ok;
+    drawShape(c,s,o,lw,{faded:screen&&bad,dashed:screen&&bad});
+  }
+}
+
+function label(c,text,x,y,u,color=INK){
+  c.save(); c.font=`700 ${13*u}px Mali, Tahoma, sans-serif`; c.textAlign='center'; c.textBaseline='middle';
+  c.lineWidth=4*u; c.strokeStyle='rgba(255,255,255,.92)'; c.lineJoin='round'; c.strokeText(text,x,y);
+  c.fillStyle=color; c.fillText(text,x,y); c.restore();
+}
+
+function drawGuides(c,m,o,u,screen){
+  const {P,okp,hc,hr,up}=m; const w=2.2*u;
+  c.save(); c.lineCap='round'; c.lineJoin='round';
+
+  /* line of action : quadratic curve through head - mid hip - mid ankle */
+  if(o.gAction){
+    const ank=[27,28].filter(okp).map(i=>P[i]);
+    const A=hc, B=ank.length?(ank.length===2?mid(ank[0],ank[1]):ank[0]):mid(m.Mh,add(m.Mh,mul(up,-m.tLen*2.4)));
+    const Hh=m.Mh, C={x:2*Hh.x-.5*A.x-.5*B.x,y:2*Hh.y-.5*A.y-.5*B.y};
+    c.setLineDash([]); c.lineWidth=w*3.2; c.strokeStyle='rgba(255,255,255,.9)';
+    c.beginPath();c.moveTo(A.x,A.y);c.quadraticCurveTo(C.x,C.y,B.x,B.y);c.stroke();
+    c.lineWidth=w*1.7; c.strokeStyle='#FF3D77';
+    c.beginPath();c.moveTo(A.x,A.y);c.quadraticCurveTo(C.x,C.y,B.x,B.y);c.stroke();
+    c.fillStyle='#FF3D77'; c.beginPath(); c.arc(B.x,B.y,w*2.1,0,7); c.fill();
+  }
+  /* shoulder / hip lines */
+  if(o.gLines){
+    const ext=(a,b,col)=>{const d=sub(b,a);const A=add(a,mul(d,-.35)),B=add(b,mul(d,.35));
+      c.setLineDash([w*4,w*3]); c.lineWidth=w*1.4; c.strokeStyle=col; c.beginPath();c.moveTo(A.x,A.y);c.lineTo(B.x,B.y);c.stroke();};
+    if(okp(11)&&okp(12)) ext(P[11],P[12],'#1E90E8');
+    if(okp(23)&&okp(24)) ext(P[23],P[24],'#8F4BFF');
+    c.setLineDash([]);
+  }
+  /* head guide : front meridian + brow line on the cranium sphere */
+  if(o.gHead && okp(0)){
+    const e=norm(sub(P[8],P[7]));            // image-space direction ear(L)->ear(R) ... sign irrelevant
+    const eDir=(okp(7)&&okp(8))?norm(sub(P[7],P[8])):{x:1,y:0,z:0};
+    const uDir=perp(eDir); const uUp=(uDir.x*up.x+uDir.y*up.y)>=0?uDir:mul(uDir,-1);
+    const nOff=sub(P[0],hc); const d=Math.max(-hr,Math.min(hr,nOff.x*eDir.x+nOff.y*eDir.y));
+    const rx=Math.abs(d), ang=Math.atan2(eDir.y,eDir.x);
+    const ctr=add(hc,mul(eDir,d));  // equator crossing of the meridian
+    c.lineWidth=w*1.3; c.strokeStyle='rgba(43,35,80,.95)'; c.setLineDash([]);
+    c.save(); c.translate(hc.x,hc.y); c.rotate(ang);
+    c.beginPath(); c.ellipse(0,0,Math.max(rx,.6),hr,0,-Math.PI/2,Math.PI/2,d<0); c.stroke();
+    /* brow / eye line */
+    let hEye=0; if(okp(2)&&okp(5)){const em=mid(P[2],P[5]);const q=sub(em,hc);hEye=-(q.x*uUp.x+q.y*uUp.y);}
+    const ch=Math.sqrt(Math.max(hr*hr-hEye*hEye,0));
+    const yy=(function(){const q=sub(hc,hc);return 0})();
+    c.restore();
+    // brow line drawn in world coords
+    const eyeC=add(hc,mul(uUp,(okp(2)&&okp(5))?((sub(mid(P[2],P[5]),hc).x*uUp.x+sub(mid(P[2],P[5]),hc).y*uUp.y)):0));
+    const A=add(eyeC,mul(eDir,-ch)),B=add(eyeC,mul(eDir,ch));
+    c.setLineDash([w*3,w*2]); c.lineWidth=w*1.3; c.beginPath(); c.moveTo(A.x,A.y); c.lineTo(B.x,B.y); c.stroke();
+    c.setLineDash([]);
+  }
+  /* angle labels */
+  if(o.gAngles){
+    for(const a of m.angles){ if(!a.ok) continue; label(c,Math.round(a.v)+'°',a.at.x,a.at.y-(m.hr*.9),u,'#C2185B'); }
+  }
+  /* all 33 landmarks */
+  if(o.gDots){
+    for(let i=0;i<33;i++){
+      const p=P[i], good=okp(i);
+      c.fillStyle=good?'#18B77A':'#FF4D4D'; c.strokeStyle='#fff'; c.lineWidth=u*1.6;
+      c.beginPath(); c.arc(p.x,p.y,3.6*u,0,7); c.fill(); c.stroke();
+    }
+  }
+  c.restore();
+}
+
+/* ---------------- main draw ---------------- */
+let lastInfoKey='', infoTick=0;
+function draw(forceInfo){
+  const W=raw.width,H=raw.height;
+  if(view.width!==W||view.height!==H){view.width=W;view.height=H}
+  ctx.clearRect(0,0,W,H);
+  const o=opts(); const u=Math.max(W,H)/900; const lw=o.lw*u;
+
+  if(S.hasSource&&S.kind!=='demo'&&o.bgop>0){
+    ctx.save(); ctx.globalAlpha=o.bgop;
+    if(S.mirrored){ctx.translate(W,0);ctx.scale(-1,1)}
+    ctx.drawImage(raw,0,0); ctx.restore();
+  }
+  $('#empty').style.display=S.hasSource?'none':'grid';
+  if(!S.hasSource||!S.lm){ S.model=null; updateBadge(null); if(forceInfo!==false) renderInfo(null); setExportEnabled(false); return; }
+
+  const m=buildModel(S.lm,W,H,o); S.model=m;
+  drawFigure(ctx,m,o,lw,true);
+  drawGuides(ctx,m,o,u,true);
+  updateBadge(m);
+  setExportEnabled(true);
+  infoTick++;
+  if(forceInfo===true || !S.live || infoTick%12===0) renderInfo(m);
+}
+
+function updateBadge(m){
+  const b=$('#badge'); let h='';
+  if(S.live) h+='<span class="good">กล้องสด</span>';
+  if(S.hasSource && !S.lm){
+    h+= S.noPerson ? '<span class="bad">ไม่พบคนในภาพ ลองรูปที่เห็นตัวชัดขึ้น</span>' : (S.lmk? '' : '<span class="warn">รอโมเดลโหลด…</span>');
+  }
+  if(m){
+    const n=m.unreliable.length;
+    h+= n===0 ? '<span class="good">มั่นใจครบทุกจุด</span>' : `<span class="warn">${n} จุดไม่น่าเชื่อถือ</span>`;
+    if(S.kind==='demo') h+='<span>ท่าตัวอย่าง</span>';
+  }
+  b.innerHTML=h;
+}
+function setExportEnabled(on){['#btnPng','#btnCopy','#btnJson'].forEach(s=>$(s).disabled=!on)}
+
+/* =====================================================================
+   INFO PANELS
+   ===================================================================== */
+function renderInfo(m){
+  const pT=$('#pTrust'),pS=$('#pShape'),pP=$('#pProp');
+  if(!m){
+    const e='<p class="hint">เมื่อมีภาพและตรวจจับท่าทางได้แล้ว ข้อมูลจะแสดงที่นี่</p>';
+    pT.innerHTML=e;pS.innerHTML=e;pP.innerHTML=e;return;
+  }
+  const o=opts(), pct=v=>Math.round(Math.max(0,Math.min(1,v))*100);
+
+  /* ---- trust ---- */
+  const n=m.unreliable.length;
+  let h=`<div class="lbl"><span>ความมั่นใจเฉลี่ย (จุดที่ใช้สร้างรูปทรง)</span><span>${pct(m.avgConf)}%</span></div>
+    <div class="meter"><b style="width:${pct(m.avgConf)}%;background:${m.avgConf>.75?'#7EDDB4':m.avgConf>.5?'#FFD86B':'#FF6B6B'}"></b></div>`;
+  if(n===0) h+=`<div class="alert good"><strong>ทุกจุดผ่านเกณฑ์ ${pct(o.thr)}%</strong>โครงนี้น่าเชื่อถือพอจะใช้เป็นอ้างอิง</div>`;
+  else{
+    const hidden=o.low==='hide'?' และถูกซ่อนอยู่':' (แสดงแบบจางเส้นประ)';
+    h+=`<div class="alert ${n>6?'bad':''}"><strong>${n} จุดต่ำกว่า ${pct(o.thr)}%${hidden}</strong>รูปทรงที่เกี่ยวข้องอาจเพี้ยน ควรเทียบกับภาพจริงก่อนวาดต่อ
+      <div class="tags">${m.unreliable.map(i=>`<span class="tag">${NAMES[i]} ${pct(S.lm[i].v)}%${(S.lm[i].x<-.03||S.lm[i].x>1.03||S.lm[i].y<-.03||S.lm[i].y>1.03)?' (นอกกรอบ)':''}</span>`).join('')}</div>
+      <p class="hint" style="margin-top:8px">ลองถ่ายใหม่ให้เห็นทั้งตัว เพิ่มแสง ถอยห่างกล้อง หรือสลับเป็นโมเดล Heavy</p></div>`;
+  }
+  const rows=[...Array(33).keys()].map(i=>{const v=S.lm[i].v,c=v>=o.thr?'#18B77A':'#FF4D4D';
+    return `<div>${NAMES[i]}</div><div class="bar" style="grid-column:2"><b style="width:${pct(v)}%;background:${c}"></b></div>`}).join('');
+  h+=`<details><summary style="cursor:pointer;font-weight:700;margin:8px 0">ค่าความมั่นใจทั้ง 33 จุด</summary><div class="conf" style="grid-template-columns:1fr 90px">${rows}</div></details>`;
+  pT.innerHTML=h;
+
+  /* ---- shapes ---- */
+  const body=m.shapes.filter(s=>!s.joint).sort((a,b)=>a.label.localeCompare(b.label,'th'));
+  const joints=m.shapes.filter(s=>s.joint);
+  const jArea=joints.reduce((a,s)=>a+s.area,0);
+  const total=body.reduce((a,s)=>a+s.area,0)+jArea;
+  const sw=s=>`<span class="dot" style="background:${shapeColor(s,o.palette)}"></span>`;
+  let t=`<p class="hint" style="margin-top:0">คำนวณจากพิกัด landmark (หน่วยพิกเซลของภาพ) พื้นที่ที่ซ้อนกันนับแยก</p><table><thead><tr><th>รูปทรง</th><th class="n">พื้นที่ px²</th><th class="n">สัดส่วน</th></tr></thead><tbody>`;
+  for(const s of body){
+    t+=`<tr><td>${sw(s)}${s.label}${s.ok?'':' ⚠'}<div class="formula">${s.formula} · ${s.dims}</div></td><td class="n">${fmt(s.area)}</td><td class="n">${fmt(s.area/total*100,1)}%</td></tr>`;
+  }
+  t+=`<tr><td><span class="dot" style="background:${PART_COLOR.joint}"></span>ข้อต่อ ${joints.length} วง (วงกลม)<div class="formula">Σ π × r² ของทุกข้อต่อ</div></td><td class="n">${fmt(jArea)}</td><td class="n">${fmt(jArea/total*100,1)}%</td></tr>`;
+  t+=`</tbody></table><div class="alert" style="margin-top:12px"><strong>พื้นที่สี่เหลี่ยมไหล่–สะโพก</strong>${fmt(m.torsoQuadArea)} px² ด้วยสูตร shoelace ½|Σ(xᵢyᵢ₊₁ − xᵢ₊₁yᵢ)| ใช้เป็นตัวกำหนดขนาดอกและสะโพก</div>`;
+  pS.innerHTML=t;
+
+  /* ---- proportions & angles ---- */
+  let p='';
+  if(m.heads) p+=`<div class="lbl"><span>ความสูงโดยประมาณ</span></div><div class="big-num">${fmt(m.heads,1)} หัว</div><p class="hint">1 หัว ≈ 2.4 × รัศมีวงกลมหัว (${fmt(m.headUnit)} px) คนทั่วไปประมาณ 7–7.5 หัว นักวาดมักใช้ 8 หัวสำหรับตัวละครแนววีรบุรุษ</p>`;
+  else p+='<p class="hint">ยังไม่เห็นเท้าชัดพอจะวัดความสูง</p>';
+  p+=`<table style="margin-top:10px"><thead><tr><th>ส่วน</th><th class="n">ความยาว (หัว)</th><th class="n">มุมย่น</th></tr></thead><tbody>`;
+  for(const b of m.bones){
+    const fs=b.l3>0?b.l2/b.l3:1;
+    const tag=!b.ok?'ไม่แน่ใจ':fs<.7?'ย่นมาก':fs<.9?'ย่นเล็กน้อย':'เห็นเต็ม';
+    p+=`<tr><td>${b.label}${b.ok?'':' ⚠'}</td><td class="n">${fmt(b.l2/m.headUnit,2)}</td><td class="n">${tag} (${pct(fs)}%)</td></tr>`;
+  }
+  p+=`</tbody></table><p class="hint">มุมย่น (foreshortening) = ความยาวในภาพ ÷ ความยาวจริงที่รวมค่า z ยิ่งต่ำยิ่งชี้เข้าหากล้อง วาดเป็นทรงสั้นและกว้างขึ้น</p>`;
+  p+=`<table style="margin-top:12px"><thead><tr><th>มุม</th><th class="n">ค่า</th></tr></thead><tbody>`;
+  for(const a of m.angles) p+=`<tr><td>${a.label}${a.ok?'':' ⚠'}</td><td class="n">${fmt(a.v)}° <span class="formula">(เหยียดตรง = 180°)</span></td></tr>`;
+  p+=`<tr><td>เอียงของแนวไหล่</td><td class="n">${fmt(m.shTilt,1)}°</td></tr><tr><td>เอียงของแนวสะโพก</td><td class="n">${fmt(m.hpTilt,1)}°</td></tr><tr><td>ลำตัวเอียงจากแนวตั้ง</td><td class="n">${fmt(m.lean,1)}°</td></tr></tbody></table>`;
+  p+=`<p class="hint">มุมข้อต่อคำนวณจาก arccos ของ dot product ระหว่างเวกเตอร์กระดูกสองท่อน ในระนาบภาพ</p>`;
+  pP.innerHTML=p;
+
+  /* export note */
+  const incl=m.shapes.filter(s=>!s.ok).length;
+  $('#expNote').textContent = incl && o.low!=='hide'
+    ? `มี ${incl} รูปทรงที่ไม่น่าเชื่อถือ จะถูกวาดทึบเหมือนปกติในไฟล์ PNG (เลือก "ซ่อนรูปทรงนั้น" ถ้าไม่ต้องการ)`
+    : 'ไฟล์ PNG จะมีเฉพาะรูปทรงสีทึบ พื้นที่นอกเส้นขอบทั้งหมดโปร่งใส ไม่มีภาพถ่ายต้นฉบับติดไปด้วย';
+}
+
+/* tabs */
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p));
+}));
+
+/* =====================================================================
+   MODEL LOADING
+   ===================================================================== */
+function setModelStatus(kind,text){
+  const c=$('#modelChip'); c.className='chip '+kind; $('#modelTxt').textContent=text; $('#retry').hidden=kind!=='err';
+}
+async function loadModel(key){
+  if(S.loading) return; S.loading=true; S.modelKey=key; S.lmk=null;
+  setModelStatus('','โมเดล: กำลังโหลด '+key+'…');
+  try{
+    if(!S.vision) S.vision=await import(VISION_URL+'/vision_bundle.mjs');
+    const fileset=await S.vision.FilesetResolver.forVisionTasks(VISION_URL+'/wasm');
+    const make=delegate=>S.vision.PoseLandmarker.createFromOptions(fileset,{
+      baseOptions:{modelAssetPath:modelURL(key),delegate},
+      runningMode:'IMAGE',numPoses:1,minPoseDetectionConfidence:.4,minPosePresenceConfidence:.4,minTrackingConfidence:.4});
+    try{S.lmk=await make('GPU')}catch(e){S.lmk=await make('CPU')}
+    S.mode='IMAGE';
+    setModelStatus('ok','โมเดลพร้อม: '+key);
+  }catch(err){
+    console.error(err);
+    setModelStatus('err','โหลดโมเดลไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต)');
+  }finally{ S.loading=false; }
+  if(S.lmk){
+    if(S.live) await setMode('VIDEO');
+    else if(S.hasSource&&S.kind!=='demo') detectStatic();
+    draw(true);
+  }
+}
+async function setMode(m){ if(S.lmk&&S.mode!==m){await S.lmk.setOptions({runningMode:m}); S.mode=m;} }
+$('#retry').addEventListener('click',()=>loadModel($('#model').value));
+$('#model').addEventListener('change',e=>loadModel(e.target.value));
+
+/* =====================================================================
+   DETECTION
+   ===================================================================== */
+function applyResult(res,live){
+  if(!res||!res.landmarks||!res.landmarks.length){ S.noPerson=true; if(!live||S.frame%15===0){S.lm=null} return; }
+  S.noPerson=false;
+  let next=res.landmarks[0].map(p=>({x:S.mirrored?1-p.x:p.x,y:p.y,z:p.z,v:p.visibility==null?1:p.visibility}));
+  const k=live?+$('#smooth').value/100:0;
+  if(k>0&&S.lm&&S.lm.length===33) next=next.map((p,i)=>({x:S.lm[i].x*k+p.x*(1-k),y:S.lm[i].y*k+p.y*(1-k),z:S.lm[i].z*k+p.z*(1-k),v:S.lm[i].v*k+p.v*(1-k)}));
+  S.lm=next;
+}
+async function detectStatic(){
+  if(!S.lmk){ draw(true); return; }
+  $('#busy').classList.add('on');
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    await setMode('IMAGE');
+    S.lm=null;
+    applyResult(S.lmk.detect(raw),false);
+  }catch(err){ console.error(err); toast('วิเคราะห์ภาพไม่สำเร็จ'); }
+  $('#busy').classList.remove('on');
+  draw(true);
+}
+
+/* =====================================================================
+   SOURCES : upload / paste / drop / demo / webcam
+   ===================================================================== */
+async function loadImageFile(file){
+  if(!file||!file.type.startsWith('image/')){toast('ไฟล์นี้ไม่ใช่รูปภาพ');return}
+  stopCamera();
+  let bmp;
+  try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
+  catch(e){ bmp=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)}); }
+  const w=bmp.width||bmp.naturalWidth, h=bmp.height||bmp.naturalHeight, k=Math.min(1,1600/Math.max(w,h));
+  raw.width=Math.round(w*k); raw.height=Math.round(h*k);
+  rawCtx.clearRect(0,0,raw.width,raw.height); rawCtx.drawImage(bmp,0,0,raw.width,raw.height);
+  S.hasSource=true; S.kind='image'; S.mirrored=false; S.lm=null; S.noPerson=false;
+  draw(true);
+  if(!S.lmk&&!S.loading) loadModel($('#model').value); else await detectStatic();
+}
+$('#fileIn').addEventListener('change',e=>{const f=e.target.files[0]; if(f)loadImageFile(f); e.target.value='';});
+window.addEventListener('paste',e=>{const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith('image/')); if(it){loadImageFile(it.getAsFile());}});
+const stage=$('#stage');
+['dragenter','dragover'].forEach(t=>stage.addEventListener(t,e=>{e.preventDefault();stage.classList.add('drag')}));
+['dragleave','drop'].forEach(t=>stage.addEventListener(t,e=>{e.preventDefault();stage.classList.remove('drag')}));
+stage.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f)loadImageFile(f)});
+
+/* demo pose (synthetic landmarks, one uncertain point to show the warning) */
+function loadDemo(){
+  stopCamera();
+  raw.width=900; raw.height=1200; rawCtx.clearRect(0,0,900,1200);
+  const px=[ // [x,y,z,vis] in pixels of a 900x1200 frame, z in fraction of width
+    [457,198,-.05],[470,176,-.04],[484,176,-.04],[497,176,-.03],[444,176,-.04],[430,176,-.04],[417,176,-.03],[502,182,0],[412,182,0],[470,222,-.04],[444,222,-.04],
+    [570,300,0],[344,318,0],[740,340,-.06],[310,490,.01],[770,200,-.12],[330,625,.02],
+    [762,128,-.14],[310,705,.02],[797,118,-.14],[338,712,.02],[800,150,-.13],[350,690,.02],
+    [535,605,0],[375,600,0],[600,830,-.06],[370,830,.01],[610,1050,-.03],[360,1050,.02],
+    [598,1085,-.03],[358,1085,.02],[672,1095,-.04],[295,1093,.02]
+  ];
+  S.lm=px.map((p,i)=>({x:p[0]/900,y:p[1]/1200,z:p[2],v:(i===32||i===30)?.36:.97}));
+  S.hasSource=true; S.kind='demo'; S.mirrored=false; S.noPerson=false;
+  draw(true);
+}
+$('#btnDemo').addEventListener('click',loadDemo); $('#btnDemo2').addEventListener('click',loadDemo);
+
+/* webcam */
+async function startCamera(){
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'},audio:false});
+  }catch(err){
+    toast(err.name==='NotAllowedError'?'ยังไม่ได้อนุญาตให้ใช้กล้อง':'เปิดกล้องไม่ได้ ตรวจสอบว่ามีกล้องและไม่ถูกโปรแกรมอื่นใช้อยู่');
+    return;
+  }
+  video.srcObject=S.stream; await video.play();
+  S.live=true; S.hasSource=true; S.kind='cam'; S.mirrored=$('#mirror').checked; S.lm=null; S.noPerson=false; S.lastT=-1;
+  $('#btnCam').textContent='ปิดกล้อง'; $('#btnShot').disabled=false;
+  if(!S.lmk&&!S.loading) await loadModel($('#model').value);
+  try{ await setMode('VIDEO'); }catch(e){}
+  liveLoop();
+}
+function stopCamera(){
+  if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}
+  const was=S.live; S.live=false; video.srcObject=null;
+  $('#btnCam').textContent='เปิดกล้อง'; $('#btnShot').disabled=true;
+  if(was) { S.mode&&S.lmk&&setMode('IMAGE').catch(()=>{}); }
+}
+function liveLoop(){
+  if(!S.live) return;
+  const v=video;
+  if(v.readyState>=2&&v.videoWidth){
+    if(raw.width!==v.videoWidth||raw.height!==v.videoHeight){raw.width=v.videoWidth;raw.height=v.videoHeight}
+    S.mirrored=$('#mirror').checked;
+    rawCtx.drawImage(v,0,0);
+    if(S.lmk&&S.mode==='VIDEO'&&v.currentTime!==S.lastT){
+      S.lastT=v.currentTime; S.frame++;
+      try{applyResult(S.lmk.detectForVideo(v,performance.now()),true)}catch(e){console.error(e)}
+    }
+    draw();
+  }
+  requestAnimationFrame(liveLoop);
+}
+$('#btnCam').addEventListener('click',()=>S.live?(stopCamera(),draw(true)):startCamera());
+$('#btnCam2').addEventListener('click',()=>S.live?null:startCamera());
+$('#mirror').addEventListener('change',()=>{ if(S.live){S.lm=null} });
+
+let counting=false;
+$('#btnShot').addEventListener('click',async()=>{
+  if(!S.live||counting) return;
+  let n=+$('#timer').value; const el=$('#count');
+  if(n>0){
+    counting=true; el.classList.add('on');
+    while(n>0&&S.live){ el.textContent=n; await new Promise(r=>setTimeout(r,1000)); n--; }
+    el.classList.remove('on'); counting=false;
+    if(!S.live) return;
+  }
+  stopCamera();      // freeze: raw canvas + landmarks already hold the last frame
+  S.kind='cam-shot';
+  draw(true);
+  toast(S.lm?'ถ่ายภาพแล้ว ปรับโครงต่อได้เลย':'ถ่ายภาพแล้ว แต่ยังไม่พบคนในภาพ');
+});
+
+/* =====================================================================
+   UI wiring
+   ===================================================================== */
+const outs={thr:v=>v+'%',thick:v=>v+'%',lw:v=>v,bgop:v=>v+'%',smooth:v=>v+'%'};
+for(const id in outs){ $('#'+id).addEventListener('input',e=>{ $('#'+id+'O').textContent=outs[id](e.target.value); }); }
+['thr','low','thick','palette','outline','lw','bgop','gHead','gAction','gLines','gAngles','gDots'].forEach(id=>
+  $('#'+id).addEventListener('input',()=>draw(true)));
+$('#bgmode').addEventListener('change',e=>{stage.className='stagewrap'+(e.target.value==='grid'?'':' '+e.target.value)});
+
+/* tooltip over landmarks */
+const tip=$('#tip');
+view.addEventListener('mousemove',e=>{
+  if(!S.model){tip.style.display='none';return}
+  const r=view.getBoundingClientRect(), sx=view.width/r.width, sy=view.height/r.height;
+  const mx=(e.clientX-r.left)*sx, my=(e.clientY-r.top)*sy;
+  let best=-1,bd=18*sx;
+  S.model.P.forEach((p,i)=>{const d=Math.hypot(p.x-mx,p.y-my); if(d<bd){bd=d;best=i}});
+  if(best<0){tip.style.display='none';return}
+  const v=S.model.P[best].v;
+  tip.textContent=`${best}: ${NAMES[best]} · ความมั่นใจ ${Math.round(v*100)}%`;
+  tip.style.display='block'; tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+14)+'px';
+});
+view.addEventListener('mouseleave',()=>tip.style.display='none');
+
+/* =====================================================================
+   EXPORT : transparent PNG (solid shapes, nothing outside the outlines)
+   ===================================================================== */
+function exportCanvas(){
+  const W=raw.width,H=raw.height,o=opts(),m=S.model; if(!m) return null;
+  const u=Math.max(W,H)/900, lw=o.lw*u;
+  const shapes=visibleShapes(m,o);
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  const grow=(x,y)=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)};
+  for(const s of shapes){ if(s.kind==='circle'){grow(s.c.x-s.r,s.c.y-s.r);grow(s.c.x+s.r,s.c.y+s.r)} else s.pts.forEach(p=>grow(p.x,p.y)); }
+  const exG=$('#expGuides').checked;
+  if(exG){ grow(0,0); grow(W,H); }
+  const scale=+$('#expScale').value;
+  const crop=$('#expCrop').checked&&shapes.length;
+  const pad=lw*2+W*.015;
+  const bx=crop?Math.max(0,x0-pad):0, by=crop?Math.max(0,y0-pad):0;
+  const bw=crop?Math.min(W,x1+pad)-bx:W, bh=crop?Math.min(H,y1+pad)-by:H;
+  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(bw*scale)); c.height=Math.max(1,Math.round(bh*scale));
+  const g=c.getContext('2d'); g.setTransform(scale,0,0,scale,-bx*scale,-by*scale);   // no background: alpha stays 0
+  g.imageSmoothingQuality='high';
+  drawFigure(g,m,o,lw,false);
+  if(exG) drawGuides(g,m,o,u,false);
+  return c;
+}
+const stamp=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`};
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+$('#btnPng').addEventListener('click',()=>{
+  const c=exportCanvas(); if(!c) return;
+  c.toBlob(b=>{download(b,`anatomy-reference-${stamp()}.png`);toast(`บันทึก PNG โปร่งใสแล้ว ${c.width}×${c.height}px`)},'image/png');
+});
+$('#btnCopy').addEventListener('click',()=>{
+  const c=exportCanvas(); if(!c) return;
+  c.toBlob(async b=>{
+    try{await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('คัดลอกภาพแล้ว วางในโปรแกรมวาดได้เลย')}
+    catch(e){toast('เบราว์เซอร์ไม่อนุญาตให้คัดลอก ใช้ปุ่มบันทึก PNG แทน')}
+  },'image/png');
+});
+$('#btnJson').addEventListener('click',()=>{
+  const m=S.model; if(!m) return;
+  const data={image:{width:raw.width,height:raw.height},threshold:opts().thr,
+    landmarks:S.lm.map((p,i)=>({index:i,name:NAMES[i],x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+p.z.toFixed(5),confidence:+p.v.toFixed(3),reliable:m.okp(i)})),
+    shapes:m.shapes.map(s=>({id:s.id,label:s.label,kind:s.kind,areaPx2:Math.round(s.area),reliable:s.ok,
+      geometry:s.kind==='circle'?{cx:+s.c.x.toFixed(1),cy:+s.c.y.toFixed(1),r:+s.r.toFixed(1)}:{points:s.pts.map(p=>[+p.x.toFixed(1),+p.y.toFixed(1)])}})),
+    proportions:{heads:m.heads&&+m.heads.toFixed(2),shoulderTiltDeg:+m.shTilt.toFixed(1),hipTiltDeg:+m.hpTilt.toFixed(1)}};
+  download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`pose-data-${stamp()}.json`); toast('ส่งออกพิกัดแล้ว');
+});
+
+/* toast */
+let tt; function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),3200)}
+
+/* start : preload model in the background, show empty state */
+draw(true);
+loadModel($('#model').value);
+window.addEventListener('beforeunload',stopCamera);
+</script>
+</body>
+</html>
